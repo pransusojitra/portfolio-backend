@@ -33,7 +33,7 @@ app.use(
 app.use(
   cors({
     origin: "https://portfolio-sigma-teal-39.vercel.app",
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTgit add .IONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   })
