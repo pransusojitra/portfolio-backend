@@ -1,15 +1,20 @@
-const OpenAI = require('openai');
 const Project = require('../models/Project');
 const ChatHistory = require('../models/ChatHistory');
 const AppError = require('../utils/AppError');
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+const getGeminiConfig = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
-/**
- * Extract meaningful keywords from a user message to drive a MongoDB search.
- */
+  if (!apiKey) {
+    throw new AppError('Gemini API key is not configured', 500);
+  }
+
+  return { apiKey, model };
+};
+
 const extractKeywords = (message) => {
   const techKeywords = [
     'react', 'vue', 'angular', 'node', 'express', 'mongo', 'sql', 'postgres',
@@ -22,9 +27,6 @@ const extractKeywords = (message) => {
   return techKeywords.filter((kw) => lower.includes(kw));
 };
 
-/**
- * Determine project category from message intent.
- */
 const detectCategory = (message) => {
   const lower = message.toLowerCase();
   const categoryMap = {
@@ -32,26 +34,21 @@ const detectCategory = (message) => {
     backend: ['backend', 'api', 'server', 'node', 'express', 'django'],
     fullstack: ['fullstack', 'full stack', 'full-stack', 'mern', 'mean'],
     mobile: ['mobile', 'android', 'ios', 'react native', 'flutter'],
-    ai: ['ai', 'machine learning', 'deep learning', 'nlp', 'openai', 'gpt'],
+    ai: ['ai', 'machine learning', 'deep learning', 'nlp', 'gemini', 'gpt'],
     devops: ['devops', 'docker', 'kubernetes', 'ci/cd', 'aws', 'cloud'],
   };
+
   for (const [cat, terms] of Object.entries(categoryMap)) {
-    if (terms.some((t) => lower.includes(t))) return cat;
+    if (terms.some((term) => lower.includes(term))) return cat;
   }
+
   return null;
 };
 
-/**
- * Fetch the most relevant projects from MongoDB based on user message.
- */
 const fetchRelevantProjects = async (message) => {
-  const query = {};
   const keywords = extractKeywords(message);
   const category = detectCategory(message);
 
-  if (category) query.category = category;
-
-  // Full-text search when keywords exist
   if (keywords.length > 0) {
     try {
       const textResults = await Project.find(
@@ -64,7 +61,7 @@ const fetchRelevantProjects = async (message) => {
 
       if (textResults.length > 0) return textResults;
     } catch (_) {
-      // Text index might not exist in dev — fall through to regex search
+      // Text index may not exist yet; regex search below is the fallback.
     }
 
     const regexes = keywords.map((kw) => new RegExp(kw, 'i'));
@@ -75,109 +72,133 @@ const fetchRelevantProjects = async (message) => {
         { technologies: { $in: regexes } },
       ],
     };
+
     if (category) regexQuery.category = category;
+
     const regexResults = await Project.find(regexQuery).limit(5).lean();
     if (regexResults.length > 0) return regexResults;
   }
 
-  // Fallback: category filter or featured projects
   if (category) {
     return Project.find({ category }).limit(5).lean();
   }
+
   return Project.find({ featured: true }).sort({ createdAt: -1 }).limit(5).lean();
 };
 
-/**
- * Format project data as a concise text block for the AI prompt.
- */
 const formatProjectsForContext = (projects) => {
   if (!projects.length) return 'No matching projects found.';
+
   return projects
-    .map(
-      (p, i) =>
-        `${i + 1}. **${p.title}** [${p.category}]
-   Technologies: ${(p.technologies || []).join(', ')}
-   Description: ${p.shortDescription || p.description?.slice(0, 150)}...
-   ${p.githubUrl ? `GitHub: ${p.githubUrl}` : ''}
-   ${p.liveDemoUrl ? `Live Demo: ${p.liveDemoUrl}` : ''}`
-    )
+    .map((project, index) => {
+      const technologies = (project.technologies || []).join(', ');
+      const description = project.shortDescription || project.description?.slice(0, 150) || '';
+
+      return `${index + 1}. ${project.title} [${project.category}]
+Technologies: ${technologies}
+Description: ${description}
+${project.githubUrl ? `GitHub: ${project.githubUrl}` : ''}
+${project.liveDemoUrl ? `Live Demo: ${project.liveDemoUrl}` : ''}`;
+    })
     .join('\n\n');
 };
 
-// ─── Main service function ────────────────────────────────────────────────────
+const toGeminiContents = (messages) =>
+  messages.map((message) => ({
+    role: message.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: message.content }],
+  }));
 
-/**
- * Process a user chat message:
- *  1. Fetch relevant projects from MongoDB
- *  2. Build an optimised system prompt with portfolio context
- *  3. Send to OpenAI with conversation history
- *  4. Persist the exchange to ChatHistory
- *  5. Return the AI reply
- *
- * @param {string} userMessage   The user's question
- * @param {string} sessionId     Unique session identifier
- * @param {string|null} userId   Authenticated user ID (optional)
- * @param {string} ipAddress     Caller's IP for logging
- * @returns {{ reply: string, tokensUsed: number }}
- */
+const callGemini = async ({ systemPrompt, messages }) => {
+  const { apiKey, model } = getGeminiConfig();
+  const url = `${GEMINI_API_BASE_URL}/models/${model}:generateContent?key=${apiKey}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      systemInstruction: {
+        parts: [{ text: systemPrompt }],
+      },
+      contents: toGeminiContents(messages),
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 600,
+      },
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    const message = data.error?.message || 'Gemini request failed';
+    throw new AppError(message, response.status);
+  }
+
+  const reply = data.candidates?.[0]?.content?.parts
+    ?.map((part) => part.text || '')
+    .join('')
+    .trim();
+
+  if (!reply) {
+    throw new AppError('Gemini returned an empty response', 502);
+  }
+
+  return {
+    reply,
+    tokensUsed: data.usageMetadata?.totalTokenCount || 0,
+    model,
+  };
+};
+
 const processChat = async (userMessage, sessionId, userId = null, ipAddress = '') => {
-  // 1. Fetch relevant projects
   const projects = await fetchRelevantProjects(userMessage);
   const projectContext = formatProjectsForContext(projects);
 
-  // 2. Load or create chat history for this session
   let chatHistory = await ChatHistory.findOne({ sessionId });
   if (!chatHistory) {
     chatHistory = new ChatHistory({ sessionId, userId, ipAddress, messages: [] });
   }
 
-  // 3. Build system prompt
-  const systemPrompt = `You are an intelligent AI assistant for a developer's portfolio website.
-Your role is to help visitors discover projects, answer technical questions, and provide smart recommendations.
+  const systemPrompt = `You are an intelligent AI assistant for a developer portfolio website.
+Help visitors discover projects, answer technical questions, and make practical recommendations.
 
 PORTFOLIO CONTEXT:
 ${projectContext}
 
 GUIDELINES:
 - Be conversational, helpful, and technically accurate.
-- When showing projects, use a structured format with emojis for readability.
-- If asked about skills or technologies, refer to the actual project data above.
-- For general coding questions, answer based on your knowledge.
-- Keep responses concise but informative (max 300 words unless detail is needed).
-- Always recommend checking GitHub or Live Demo links when available.
+- When showing projects, use a clear structured format.
+- If asked about skills or technologies, use the actual project data above.
+- For general coding questions, answer directly.
+- Keep responses concise unless the user asks for detail.
+- Recommend GitHub or live demo links when available.
 - If no projects match, suggest alternatives from the portfolio.
-- Support FAQ topics: contact info, skills, experience, project details.
+- Support FAQ topics: contact info, skills, experience, and project details.
 
-CURRENT DATE: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+CURRENT DATE: ${new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })}`;
 
-  // 4. Build messages array (last 10 exchanges for context window efficiency)
-  const recentMessages = chatHistory.messages.slice(-20).map((m) => ({
-    role: m.role,
-    content: m.content,
+  const recentMessages = chatHistory.messages.slice(-20).map((message) => ({
+    role: message.role,
+    content: message.content,
   }));
 
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    ...recentMessages,
-    { role: 'user', content: userMessage },
-  ];
-
-  // 5. Call OpenAI
-  const completion = await openai.chat.completions.create({
-    model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
-    messages,
-    max_tokens: 600,
-    temperature: 0.7,
+  const { reply, tokensUsed, model } = await callGemini({
+    systemPrompt,
+    messages: [
+      ...recentMessages,
+      { role: 'user', content: userMessage },
+    ],
   });
 
-  const reply = completion.choices[0].message.content;
-  const tokensUsed = completion.usage?.total_tokens || 0;
-
-  // 6. Persist conversation
   chatHistory.messages.push({ role: 'user', content: userMessage });
   chatHistory.messages.push({ role: 'assistant', content: reply });
   chatHistory.totalTokensUsed += tokensUsed;
-  chatHistory.model = process.env.OPENAI_MODEL || 'gpt-3.5-turbo';
+  chatHistory.model = model;
   await chatHistory.save();
 
   return { reply, tokensUsed, projectsFound: projects.length };
