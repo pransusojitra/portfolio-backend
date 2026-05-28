@@ -1,0 +1,109 @@
+.timeline-container-custom {
+  max-width: 1000px;
+}
+
+.timeline-track-custom {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  opacity: 0.3;
+}
+
+.timeline-item-wrapper {
+  position: relative;
+}
+
+/* Timeline center circle pin */
+.timeline-pin-custom {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  top: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  border: 3px solid var(--color-primary);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  box-shadow: 0 0 10px var(--color-primary-glow);
+  transition: var(--transition-fast);
+}
+
+.timeline-card-wrapper:hover ~ .timeline-pin-custom,
+.timeline-item-wrapper:hover .timeline-pin-custom {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 15px var(--color-secondary-glow);
+}
+
+/* Cards sizing */
+.timeline-card-wrapper {
+  width: 45%;
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  transition: var(--transition-normal);
+}
+
+.timeline-card-wrapper:hover {
+  border-color: var(--color-secondary);
+  box-shadow: 0 8px 25px var(--color-secondary-glow);
+}
+
+.role-text {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.company-text {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.duration-badge {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.description-text {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+/* Responsive details for mobile layout */
+@media (max-width: 991px) {
+  .timeline-track-custom {
+    left: 20px;
+    transform: none;
+  }
+
+  .timeline-pin-custom {
+    left: 20px;
+    top: 30px;
+    transform: translate(-50%, -50%);
+  }
+
+  .timeline-item-wrapper {
+    flex-direction: row !important; /* Force left to right flow */
+    margin-bottom: 40px !important;
+  }
+
+  .timeline-card-wrapper {
+    width: calc(100% - 50px);
+    margin-left: 50px;
+  }
+}

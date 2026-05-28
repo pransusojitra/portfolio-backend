@@ -1,0 +1,79 @@
+.service-card-custom {
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.service-card-custom:hover {
+  border-color: var(--hover-accent);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Service Card Hover Neon Glow for Dark Mode */
+[data-theme='dark'] .service-card-custom:hover {
+  box-shadow: 0 10px 25px rgba(255, 255, 255, 0.02), 0 0 15px var(--hover-accent);
+}
+
+.service-icon-box {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-normal);
+}
+
+.service-card-custom:hover .service-icon-box {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.service-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.service-card-desc {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Sliding color-accent line at card bottom */
+.service-accent-line {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 4px;
+  transition: width var(--transition-normal) ease;
+}
+
+.service-card-custom:hover .service-accent-line {
+  width: 100%;
+}
+
+/* ── Light-mode specific overrides ─────────────────────── */
+[data-theme='light'] .service-card-custom {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06) !important;
+}
+
+[data-theme='light'] .service-card-custom:hover {
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12) !important;
+  border-color: var(--hover-accent) !important;
+}
+
+[data-theme='light'] .service-card-title {
+  color: #0f172a;
+}
+
+[data-theme='light'] .service-card-desc {
+  color: #475569;
+}
+

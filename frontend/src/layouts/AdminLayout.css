@@ -1,0 +1,39 @@
+.admin-layout-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-main-area {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 30px;
+  min-width: 0; /* Prevents flex children from stretching outside parent bounds */
+  z-index: 2;
+  transition: padding var(--transition-normal);
+}
+
+.admin-header {
+  border-radius: var(--border-radius-md);
+  margin-top: 10px;
+}
+
+.admin-content-workspace {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Responsive adjustment for tablets & mobiles */
+@media (max-width: 991px) {
+  .admin-layout-container {
+    flex-direction: column;
+  }
+
+  .admin-main-area {
+    padding: 15px;
+  }
+}

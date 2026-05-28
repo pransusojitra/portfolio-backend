@@ -1,0 +1,167 @@
+.contact-info-panel {
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.contact-panel-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.contact-panel-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.info-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-primary-glow);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--glass-border);
+}
+
+.info-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition: var(--transition-fast);
+}
+
+a.info-value:hover {
+  color: var(--color-secondary);
+}
+
+.panel-footer-decor {
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+}
+
+/* Floating Input Group styling */
+.input-group-custom {
+  position: relative;
+  width: 100%;
+}
+
+.form-input-custom {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid var(--glass-border);
+  padding: 12px 4px;
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  font-family: var(--font-primary);
+  outline: none;
+  transition: var(--transition-normal);
+}
+
+.form-input-custom:focus {
+  border-bottom-color: transparent;
+}
+
+/* Floating Label behavior */
+.form-label-custom {
+  position: absolute;
+  left: 4px;
+  top: 12px;
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  pointer-events: none;
+  transition: var(--transition-fast) ease-out;
+}
+
+/* Move label up on focus or when input is not empty */
+.form-input-custom:focus ~ .form-label-custom,
+.form-input-custom:not(:placeholder-shown) ~ .form-label-custom {
+  top: -12px;
+  font-size: 0.85rem;
+  color: var(--color-secondary);
+  font-weight: 600;
+}
+
+/* Focus Animated Underline */
+.focus-underline {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--transition-normal) ease;
+}
+
+.form-input-custom:focus ~ .focus-underline {
+  transform: scaleX(1);
+}
+
+textarea.form-input-custom {
+  resize: none;
+}
+
+/* Error states */
+.form-input-custom.error-border {
+  border-bottom-color: #ef4444;
+}
+
+.error-message-text {
+  color: #ef4444;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: block;
+  margin-top: 4px;
+}
+
+/* Loading spinner rotational keyframes */
+.spinner-icon {
+  animation: rotateSpinner 1.2s linear infinite;
+}
+
+@keyframes rotateSpinner {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Custom Success/Error Alerts styling */
+.alert-custom {
+  font-size: 0.95rem;
+  border: 1px solid transparent;
+}
+
+.success-alert {
+  background-color: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.success-alert .alert-icon {
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.error-alert {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.error-alert .alert-icon {
+  color: #ef4444;
+  flex-shrink: 0;
+}

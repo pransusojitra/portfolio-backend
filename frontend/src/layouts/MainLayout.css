@@ -1,0 +1,23 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.main-content {
+  flex-grow: 1;
+  width: 100%;
+}
+
+/* Cursor glow scale up on hovering interactive items */
+.cursor-glow.cursor-hover {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, var(--color-secondary-glow) 0%, rgba(0,0,0,0) 70%);
+}
+
+[data-theme='light'] .cursor-glow.cursor-hover {
+  background: radial-gradient(circle, var(--color-secondary-glow) 0%, rgba(0,0,0,0) 65%);
+}
