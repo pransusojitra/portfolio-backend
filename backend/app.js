@@ -20,34 +20,49 @@ const { sendNotFound } = require('./utils/apiResponse');
 
 const app = express();
 
-// ─── Security middleware ──────────────────────────────────────────────────────
+//
+// FIXED CORS
+//
 
-// Helmet sets secure HTTP headers
+const corsOptions = {
+  origin: "*",
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+//
+// SECURITY MIDDLEWARE
+//
+
 app.use(
   helmet({
-    crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow /uploads images
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
   })
 );
 
-// CORS — allow requests from the frontend origin
-app.use(
-  cors({
-    origin: "https://portfolio-sigma-teal-39.vercel.app",
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTgit add .IONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-  })
-);
+//
+// APPLY CORS
+//
 
-// Sanitise incoming data against MongoDB operator injection
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+//
+// SANITIZE
+//
+
 app.use(mongoSanitize());
 
-// ─── Body parsers ─────────────────────────────────────────────────────────────
+//
+// BODY PARSER
+//
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ─── Logger ───────────────────────────────────────────────────────────────────
+//
+// LOGGER
+//
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
@@ -55,27 +70,35 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('combined'));
 }
 
-// ─── Static files — serve uploaded images ─────────────────────────────────────
+//
+// STATIC FILES
+//
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ─── Global rate limiter ──────────────────────────────────────────────────────
+//
+// RATE LIMITER
+//
 
 app.use('/api', apiLimiter);
 
-// ─── Health check ─────────────────────────────────────────────────────────────
+//
+// HEALTH ROUTE
+//
 
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
-    message: '🚀 Portfolio API is running',
+    message: 'Portfolio API is running',
     environment: process.env.NODE_ENV,
     timestamp: new Date().toISOString(),
     uptime: `${Math.floor(process.uptime())}s`,
   });
 });
 
-// ─── API routes ───────────────────────────────────────────────────────────────
+//
+// API ROUTES
+//
 
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
@@ -84,13 +107,17 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/search', searchRoutes);
 
-// ─── 404 handler ─────────────────────────────────────────────────────────────
+//
+// 404
+//
 
 app.use((req, res) => {
   sendNotFound(res, `Route ${req.originalUrl} not found`);
 });
 
-// ─── Global error handler (must be last) ─────────────────────────────────────
+//
+// ERROR HANDLER
+//
 
 app.use(errorHandler);
 

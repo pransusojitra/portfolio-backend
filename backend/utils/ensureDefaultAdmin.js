@@ -1,7 +1,11 @@
 const User = require('../models/User');
 
 const ensureDefaultAdmin = async () => {
-  if (process.env.NODE_ENV !== 'development') return;
+  const shouldSeed =
+    process.env.NODE_ENV === 'development' ||
+    process.env.ALLOW_DEFAULT_ADMIN_SEED === 'true';
+
+  if (!shouldSeed) return;
 
   const email = process.env.DEFAULT_ADMIN_EMAIL || 'admin@example.com';
   const password = process.env.DEFAULT_ADMIN_PASSWORD || 'password123';
